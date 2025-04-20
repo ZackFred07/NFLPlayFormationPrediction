@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  trainer:
+    image: pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime
+    container_name: ml-trainer-dev
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - CODE_DIR=/app
+      - DATA_DIR=/mnt/data
+      - OUTPUT_DIR=/mnt/outputs
+    volumes:
+      - ./environment.yml:/tmp/environment.yml
+      - ./code:/app
+      - ./data:/mnt/data
+      - ./outputs:/mnt/outputs
+    working_dir: /app
+    command: >
+      bash -c "
+        source /opt/conda/etc/profile.d/conda.sh &&
+        (conda info --envs | grep torchenv || conda env create -f /tmp/environment.yml -n torchenv) &&
+        conda activate torchenv &&
+        exec bash"
+    stdin_open: true
+    tty: true
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
