@@ -539,8 +539,8 @@ class NFL_Data_Preprocessing:
             print(len(play_df))
             if os.path.exists(save_path):
                 continue
-            # if(len(play_df) > 4600):
-            #     continue
+            if(len(play_df) > 5500):
+                continue
             frame_groups = list(play_df.groupby("frameId"))
             for _, frame_df in frame_groups[::2]:  # Step size 2
                 heatmap = self.create_heatmap(
