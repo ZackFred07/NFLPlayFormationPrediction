@@ -462,13 +462,6 @@ class NFL_Data_Preprocessing:
         print(tracking_df[tracking_df["frameType"] == "SNAP"]["playId"].nunique())
         print(self.local_features_df["playId"].nunique())
 
-        print_nan_rows(
-            self.local_features_df[["gameId", "playId", "ball_y"]],
-            "Ball NaNs",
-            max_rows=10,
-        )
-        
-
     @staticmethod
     def create_heatmap(frame_df, feature_cols, grid_shape):
         C = len(feature_cols)
@@ -498,9 +491,6 @@ class NFL_Data_Preprocessing:
             0,
             grid_h - 1,
         )
-
-        heatmaps = []
-        grouped_frames = self.local_features_df.groupby(["gameId", "playId", "frameId"])
 
         # Encoding positions here otherwise memory would expload
         positions = [
@@ -533,9 +523,20 @@ class NFL_Data_Preprocessing:
 
         # Group by play
         grouped = self.local_features_df.groupby(["gameId", "playId"])
-
+        self.local_features_df = None
+        
+        
         for (gameId, playId), play_df in tqdm(grouped, desc="Creating Heatmaps"):
             play_heatmaps = []
+            
+            save_path = os.path.join(
+                self.data_dir, "ST_2D_Tensor", f"{gameId}_{playId}.pt"
+            )
+            
+            if os.path.exists(save_path):
+                continue
+            
+            print(len(play_df))
 
             for _, frame_df in play_df.groupby("frameId"):
                 heatmap = self.create_heatmap(
@@ -557,7 +558,7 @@ class NFL_Data_Preprocessing:
                 play_heatmaps.append(heatmap)
 
             # Stack to tensor: [T, C, H, W]
-            play_tensor = torch.tensor(np.stack(play_heatmaps), dtype=torch.float32)
+            play_tensor = torch.tensor(np.stack(play_heatmaps), dtype=torch.bfloat16)
             
              # === Lookup Global Features ===
             global_row = self.global_feature_df[
@@ -570,9 +571,9 @@ class NFL_Data_Preprocessing:
                 continue
             
             
-            global_np = global_row.drop(columns=["gameId", "playId"]).select_dtypes(include=[np.number, np.bool_]).values.astype(np.float32)
-            global_tensor = torch.tensor(global_np[0], dtype=torch.float32)
-
+            global_np = global_row.drop(columns=["gameId", "playId"]).select_dtypes(include=[np.number, np.bool_]).to_numpy(dtype=np.float32)
+            global_tensor = torch.tensor(global_np[0], dtype=torch.bfloat16)
+            del global_np
 
             # === Lookup Labels ===
             label_row = self.encoded_labels[
@@ -584,13 +585,10 @@ class NFL_Data_Preprocessing:
                 print(f"⚠️ Skipping play {gameId}-{playId}: No label found.")
                 continue
 
-            label_np = label_row.drop(columns=["gameId", "playId"]).select_dtypes(include=[np.number, np.bool_]).values.astype(np.float32)
-            label_tensor = torch.tensor(label_np[0], dtype=torch.float32)
+            label_np = label_row.drop(columns=["gameId", "playId"]).select_dtypes(include=[np.number, np.bool_]).to_numpy(dtype=np.float32)
+            label_tensor = torch.tensor(label_np[0], dtype=torch.bfloat16)
 
             # Save to disk
-            save_path = os.path.join(
-                self.data_dir, "ST_2D_Tensor", f"{gameId}_{playId}.pt"
-            )
             torch.save((play_tensor, global_tensor, label_tensor), save_path)
 
     def tabular(self):
