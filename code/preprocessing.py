@@ -498,9 +498,6 @@ class NFL_Data_Preprocessing:
             0,
             grid_h - 1,
         )
-
-        heatmaps = []
-        grouped_frames = self.local_features_df.groupby(["gameId", "playId", "frameId"])
         
         # Encoding positions here otherwise memory would expload
         positions = [
@@ -533,19 +530,19 @@ class NFL_Data_Preprocessing:
 
         # Group by play
         grouped = self.local_features_df.groupby(["gameId", "playId"])
-        del self.local_features_df
         
         for (gameId, playId), play_df in tqdm(grouped, desc="Creating Heatmaps"):
             play_heatmaps = []
-            print(len(play_df))
             save_path = os.path.join(
                 self.data_dir, "ST_2D_Tensor", f"{gameId}_{playId}.pt"
             )
+            print(len(play_df))
             if os.path.exists(save_path):
                 continue
-            
-            
-            for _, frame_df in play_df.groupby("frameId"):
+            # if(len(play_df) > 4600):
+            #     continue
+            frame_groups = list(play_df.groupby("frameId"))
+            for _, frame_df in frame_groups[::2]:  # Step size 2
                 heatmap = self.create_heatmap(
                     frame_df,
                     feature_cols=[
