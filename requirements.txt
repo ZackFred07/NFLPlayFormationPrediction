@@ -1,0 +1,13 @@
+# Core ML / Data
+numpy
+pandas
+scikit-learn
+matplotlib
+tqdm
+seaborn
+opencv-python
+
+# Torch already included in the image with CUDA support:
+# torch==2.6.0+cu124
+# torchvision==0.21.0+cu124
+# torchaudio==2.6.0
