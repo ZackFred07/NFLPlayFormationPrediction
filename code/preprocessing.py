@@ -394,13 +394,12 @@ class NFL_Data_Preprocessing:
             "receiverAlignment",
             "dropbackType",
             "passLocationType",
-            "rushLocationType",
             "pff_runConceptPrimary",
             "pff_runConceptSecondary",
             "pff_passCoverage",
             "pff_manZone",
         ]
-        self.labels[onehot_cols] = self.labels[onehot_cols].fillna("Unknown")
+        self.labels[onehot_cols] = self.labels[onehot_cols].fillna("UNKNOWN")
         onehot_encoded = pd.get_dummies(self.labels[onehot_cols], dummy_na=False)
 
         # === Route columns (e.g. routeRanWR0, routeRanRB1, etc.) ===
@@ -530,8 +529,17 @@ class NFL_Data_Preprocessing:
                 self.data_dir, "ST_2D_Tensor", f"{gameId}_{playId}.pt"
             )
             print(len(play_df))
-            if os.path.exists(save_path):
-                continue
+            try:
+                torch.load(save_path)
+            except Exception as e:
+                print(f"Error on {save_path}: {e}")
+                # Continue loop if there's an error (this will execute the rest of the loop)
+                pass
+            else:
+                print(f"No error on {save_path}")
+                # If no error occurred, skip the rest of the loop
+                continue  # Move to next item without doing anything more for this one
+            
             if(len(play_df) > 5500):
                 continue
             frame_groups = list(play_df.groupby("frameId"))

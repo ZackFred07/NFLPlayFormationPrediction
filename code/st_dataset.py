@@ -1,19 +1,17 @@
 import torch
 import os
+import json
 import numpy as np
 
 class TwoDimensionalTensorDataset(torch.utils.data.Dataset):
-        # TODO: Dataset mistakes: passLocationType_UNKNOWN (index 36) and passLocationType_Unknown (index 35) need to be one; rushLocationType_Unknown (index 37) needs to be removed
-
-    def __init__(self, tensor_path_or_dir):
-        self.max_timesteps = None  # use full length by default
+    def __init__(self, tensor_path_or_dir=os.path.join(os.environ["DATA_DIR"], "ST_2D_Tensor"), label_metadata_path="label_metadata.json"):
+        self.max_timesteps = None
         self.lazy_mode = os.path.isdir(tensor_path_or_dir)
 
         if self.lazy_mode:
             self.file_paths = [
-                os.path.join(tensor_path_or_dir, fname)
-                for fname in sorted(os.listdir(tensor_path_or_dir))
-                if fname.endswith(".pt")
+                os.path.join(tensor_path_or_dir, f)
+                for f in sorted(os.listdir(tensor_path_or_dir)) if f.endswith(".pt")
             ]
             self.index_map = []
             self.seq_lens = []
@@ -26,40 +24,54 @@ class TwoDimensionalTensorDataset(torch.utils.data.Dataset):
             self.heatmaps, self.global_feats, self.labels = torch.load(tensor_path_or_dir)
             self.seq_lens = [hm.shape[0] for hm in self.heatmaps]
 
+        # Setup label fixing
+        self.fix_indices = None
+        if label_metadata_path:
+            with open(label_metadata_path) as f:
+                meta = json.load(f)
+            label_names = list(meta.keys())
+            try:
+                idx_or = label_names.index("passLocationType_Unknown")
+                idx_and = label_names.index("passLocationType_UNKNOWN")
+                idx_drop = label_names.index("rushLocationType_Unknown")
+                self.fix_indices = {"or_into": idx_or, "or_from": idx_and, "drop": idx_drop}
+            except ValueError:
+                print("⚠️ Could not find all target label indices — skipping label fix.")
+
     def __len__(self):
-        if self.lazy_mode:
-            return len(self.index_map)
-        return self.heatmaps.size(0)
+        return len(self.index_map) if self.lazy_mode else self.heatmaps.size(0)
 
     def __getitem__(self, idx):
         if self.lazy_mode:
             file_idx, local_idx = self.index_map[idx]
             h, g, l = torch.load(self.file_paths[file_idx], map_location="cpu")
-            heatmap_seq = h[local_idx]
-            global_feat = g[local_idx]
-            label = l[local_idx]
+            heatmap_seq, global_feat, label = h[local_idx], g[local_idx], l[local_idx]
         else:
-            heatmap_seq = self.heatmaps[idx]
-            global_feat = self.global_feats[idx]
-            label = self.labels[idx]
+            heatmap_seq, global_feat, label = self.heatmaps[idx], self.global_feats[idx], self.labels[idx]
 
         if self.max_timesteps is not None:
             heatmap_seq = heatmap_seq[:self.max_timesteps]
 
+        if self.fix_indices:
+            # Bitwise OR passLocationType_UNKNOWN into passLocationType_Unknown
+            i_to = self.fix_indices["or_into"]
+            i_from = self.fix_indices["or_from"]
+            i_drop = self.fix_indices["drop"]
+            label[i_to] = label[i_to] | label[i_from]
+
+            # Drop passLocationType_UNKNOWN and rushLocationType_Unknown
+            keep_indices = [
+                i for i in range(len(label)) if i not in {i_from, i_drop}
+            ]
+            label = label[keep_indices]
+
         return heatmap_seq, global_feat, label
 
     def truncate_timesteps(self, max_timesteps):
-        """
-        Sets max_timesteps to truncate the time dimension in __getitem__.
-        Handles variable-length sequences gracefully.
-        """
         self.max_timesteps = max_timesteps
         return self
 
     def truncate_by_percentile(self, percentile):
-        """
-        Sets max_timesteps using a percentile of all sequence lengths.
-        """
         if not self.seq_lens:
             raise RuntimeError("Sequence lengths not available.")
         self.max_timesteps = int(np.percentile(self.seq_lens, percentile))
