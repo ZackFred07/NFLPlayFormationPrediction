@@ -152,82 +152,80 @@ def train_eval(
                                 (t / T, float(correct))
                             )
 
-            # Metric computation
-            y_true = torch.stack(y_true).to(torch.float32).numpy()
-            y_pred = torch.stack(y_pred).to(torch.float32).numpy()
+                # Metric computation
+                y_true = torch.stack(y_true).to(torch.float32).numpy()
+                y_pred = torch.stack(y_pred).to(torch.float32).numpy()
 
-            precision_micro = precision_score(y_true, y_pred, average="micro")
-            recall_micro = recall_score(y_true, y_pred, average="micro")
-            f1_micro = f1_score(y_true, y_pred, average="micro")
+                precision_micro = precision_score(y_true, y_pred, average="micro")
+                recall_micro = recall_score(y_true, y_pred, average="micro")
+                f1_micro = f1_score(y_true, y_pred, average="micro")
 
-            auatc_by_class = {}
-            for class_idx, curve in acc_time_curve_by_class.items():
-                # Group by timestep
-                acc_dict = defaultdict(list)
-                for t, acc in curve:
-                    acc_dict[t].append(acc)
+                auatc_by_class = {}
+                for class_idx, curve in acc_time_curve_by_class.items():
+                    
+                    # Group by timestep
+                    acc_dict = defaultdict(list)
+                    for t, acc in curve:
+                        acc_dict[t].append(acc)
 
-                # Average at each t, then compute AUC
-                x_vals, y_vals = zip(
-                    *sorted((t, np.mean(accs)) for t, accs in acc_dict.items())
+                    # Average at each t, then compute AUC
+                    x_vals, y_vals = zip(
+                        *sorted((t, np.mean(accs)) for t, accs in acc_dict.items())
+                    )
+
+                    if len(set(x_vals)) > 1:  # Need at least two distinct x-values
+                        auatc_by_class[class_idx] = auc(x_vals, y_vals)
+                    else:
+                        auatc_by_class[class_idx] = 0.0
+
+                print("\n--- Overall Per-Label (Micro) ---")
+                print(
+                    f"Precision: {precision_micro:.4f}, Recall: {recall_micro:.4f}, F1: {f1_micro:.4f}"
                 )
 
-                if len(set(x_vals)) > 1:  # Need at least two distinct x-values
-                    auatc_by_class[class_idx] = auc(x_vals, y_vals)
-                else:
-                    auatc_by_class[class_idx] = 0.0
+                # Load the json with label information
+                with open("label_metadata.json") as f:
+                    label_metadata = json.load(f)
 
-            print("\n--- Overall Per-Label (Micro) ---")
-            print(
-                f"Precision: {precision_micro:.4f}, Recall: {recall_micro:.4f}, F1: {f1_micro:.4f}"
-            )
-            # print(f"Avg TTC: {avg_ttc:.4f}, AUATC: {auatc:.4f}")
+                label_names = list(label_metadata.keys())
 
-            # Load the json with label information
-            with open("label_metadata.json") as f:
-                label_metadata = json.load(f)
+                # Create mappings from the metadata json file
+                onehot_class_map = defaultdict(list)
+                for label, info in label_metadata.items():
+                    if info.get("type") == "onehot" and "onehot_class" in info:
+                        onehot_class_map[info["onehot_class"]].append(label)
 
-            label_names = list(label_metadata.keys())
+                # Calculation of onehot metrics
+                # 🧠 Get raw predictions before thresholding
+                y_pred_raw = torch.stack([
+                    torch.cat([out.cpu().unsqueeze(0) for out in model(x.to(device), x_static.to(device))], dim=0)[-1]
+                    for x, x_static, _ in test_loader
+                ]).to(torch.float32).numpy()
 
-            # Create mappings from the metadata json file
-            onehot_class_map = defaultdict(list)
-            for label, info in label_metadata.items():
-                if info.get("type") == "onehot" and "onehot_class" in info:
-                    onehot_class_map[info["onehot_class"]].append(label)
+                # 📦 Softmax-Based Onehot Metrics
+                onehot_metrics = {}
+                for group, label_list in onehot_class_map.items():
+                    indices = [label_names.index(lbl) for lbl in label_list if lbl in label_names]
+                    if not indices:
+                        continue
 
-            # Calculation of onehot metrics
-            onehot_metrics = {}
-            for group, label_list in onehot_class_map.items():
-                indices = [label_names.index(lbl) for lbl in label_list if lbl in label_names]
-                if not indices:
-                    continue
+                    y_true_group = y_true[:, indices]
+                    y_pred_group_raw = y_pred_raw[:, indices]
 
-                y_true_group = y_true[:, indices]
-                y_pred_group_raw = y_pred_raw[:, indices]  # logits before thresholding
+                    # 🧠 Softmax across one-hot class group
+                    softmaxed = torch.softmax(torch.tensor(y_pred_group_raw), dim=1).numpy()
 
-                # Softmax per row (per sample)
-                softmaxed = torch.softmax(torch.tensor(y_pred_group_raw), dim=1).numpy()
+                    # 🎯 Convert to 1-hot prediction (argmax)
+                    y_pred_group = np.zeros_like(softmaxed)
+                    y_pred_group[np.arange(len(softmaxed)), np.argmax(softmaxed, axis=1)] = 1
 
-                # Choose the argmax prediction as 1-hot prediction
-                y_pred_group = np.zeros_like(softmaxed)
-                y_pred_group[np.arange(len(softmaxed)), np.argmax(softmaxed, axis=1)] = 1
+                    onehot_metrics[group] = {
+                        "precision": precision_score(y_true_group, y_pred_group, average="micro", zero_division=0),
+                        "recall": recall_score(y_true_group, y_pred_group, average="micro", zero_division=0),
+                        "f1": f1_score(y_true_group, y_pred_group, average="micro", zero_division=0),
+                    }
 
-                onehot_metrics[group] = {
-                    "precision": precision_score(y_true_group, y_pred_group, average="micro", zero_division=0),
-                    "recall": recall_score(y_true_group, y_pred_group, average="micro", zero_division=0),
-                    "f1": f1_score(y_true_group, y_pred_group, average="micro", zero_division=0),
-                }
-
-            # Time to classify calculations
-            classwise_ttc = [(idx, ttc) for idx, ttc in ttc_scores if idx is not None]
-            onehot_ttc = compute_group_ttc(classwise_ttc, label_names, onehot_metrics)
-
-            # Save csvs
-            onehot_df = pd.DataFrame(onehot_metrics).T
-            onehot_df["ttc"] = pd.Series(onehot_ttc)
-
-            onehot_csv_path = "onehot_class_metrics.csv"
-            onehot_df.to_csv(onehot_csv_path)
+                # Save CSVs
 
 if __name__ == "__main__":
     model = CNNLSTMClassifier().to(torch.bfloat16)
