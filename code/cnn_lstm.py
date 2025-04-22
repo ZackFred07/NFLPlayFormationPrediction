@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 class CNNLSTMClassifier(nn.Module):
-    def __init__(self, input_channels=6, lstm_hidden=128, num_outputs=96, output_seq=False):
+    def __init__(self, input_channels=27, lstm_hidden=128, num_outputs=96, output_seq=False):
         super().__init__()
         self.output_seq = output_seq
 
@@ -14,7 +14,7 @@ class CNNLSTMClassifier(nn.Module):
 
         self.lstm = nn.LSTM(input_size=32, hidden_size=lstm_hidden, batch_first=False)
 
-        self.static_fc = nn.Linear(10, 32)  # adjust to your actual static feature size
+        self.static_fc = nn.Linear(73, 32)  # adjust to your actual static feature size
 
         self.head = nn.Sequential(
             nn.Linear(lstm_hidden + 32, 128),
@@ -27,6 +27,7 @@ class CNNLSTMClassifier(nn.Module):
         x_dynamic: [1, T, C, H, W] or [T, C, H, W] if batch is squeezed
         x_static: [1, F] or [F]
         """
+        dtype = next(self.parameters()).dtype
         if x_dynamic.ndim == 5:
             x_dynamic = x_dynamic.squeeze(0)  # [T, C, H, W]
         if x_static.ndim == 2:

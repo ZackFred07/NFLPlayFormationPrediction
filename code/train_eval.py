@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader, random_split
 import torch.nn as nn
 import torch.optim as optim
 from sklearn.metrics import precision_score, recall_score, f1_score, auc
+from tqdm import tqdm
 from st_dataset import TwoDimensionalTensorDataset
 from cnn_lstm import CNNLSTMClassifier
 
@@ -165,6 +166,7 @@ def curriculum_train(
     lr=1e-3,
     percentile_schedule=[5, 10, 15, 20, 25, 30, 40, 50, 70, 90, 100],
 ):
+    print("Start training")
     # Train test split using torch
     dataset_size = len(dataset)
     split_idx = int(0.8 * dataset_size)
@@ -185,18 +187,18 @@ def curriculum_train(
         total_loss = 0
         total_acc = 0
         start_time = time.time()
-        torch.cuda.reset_peak_memory_stats()
+        # torch.cuda.reset_peak_memory_stats()
 
         # Percentile schedule to as part of curiculum
         percentile = percentile_schedule[min(epoch, len(percentile_schedule) - 1)]
         
         train_dataset.dataset.truncate_by_percentile(percentile)
-        test_dataset.truncate_by_percentile(percentile)
+        test_dataset.dataset.truncate_by_percentile(percentile)
         
         train_loader = DataLoader(train_dataset, batch_size=None, shuffle=True)
         test_loader = DataLoader(test_dataset, batch_size=None)
 
-        for x, x_static, y in train_loader:
+        for x, x_static, y in tqdm(train_loader,desc=f"Epoch {epoch}"):
             x, x_static, y = (
                 x.to(device),
                 x_static.to(device),
@@ -225,7 +227,7 @@ def curriculum_train(
         gc.collect()
 
         if (epoch % 1 == 0):
-
+            
             model.eval()
 
             y_true, y_pred = [], []
@@ -354,6 +356,6 @@ def curriculum_train(
             print(f"\nSaved CSVs:\n  {super_csv_path}\n  {onehot_csv_path}")
             
 if __name__ == "__main__":
-    model = CNNLSTMClassifier()
+    model = CNNLSTMClassifier().to(torch.bfloat16)
     dataset = TwoDimensionalTensorDataset()
     curriculum_train(model=model,dataset=dataset)

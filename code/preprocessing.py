@@ -364,13 +364,6 @@ class NFL_Data_Preprocessing:
             on=["playId", "gameId"],
         )
 
-        # print("Global features", self.global_feature_df.columns.tolist())
-        # print(self.global_feature_df.head(5))
-        # print("Local features", self.local_features_df.columns.tolist())
-        # print(self.local_features_df.head(5))
-        # print("Labels", self.labels.columns.tolist())
-        # print(self.labels.head(5))
-
         print("Applying encodings")
 
         # === Multi-label boolean columns ===
@@ -529,16 +522,6 @@ class NFL_Data_Preprocessing:
                 self.data_dir, "ST_2D_Tensor", f"{gameId}_{playId}.pt"
             )
             print(len(play_df))
-            try:
-                torch.load(save_path)
-            except Exception as e:
-                print(f"Error on {save_path}: {e}")
-                # Continue loop if there's an error (this will execute the rest of the loop)
-                pass
-            else:
-                print(f"No error on {save_path}")
-                # If no error occurred, skip the rest of the loop
-                continue  # Move to next item without doing anything more for this one
             
             if(len(play_df) > 5500):
                 continue
@@ -603,4 +586,4 @@ class NFL_Data_Preprocessing:
 
 if __name__ == "__main__":
     data_preprocessor = NFL_Data_Preprocessing()
-    # data_preprocessor.create_ST_Dataset_2D_Tensors()
+    data_preprocessor.create_ST_Dataset_2D_Tensors()

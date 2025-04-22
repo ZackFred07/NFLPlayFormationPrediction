@@ -171,16 +171,6 @@
         "onehot_class":"passLocationType",
         "superCategory": "play"
     },
-    "passLocationType_Unknown": {
-        "type": "onehot",
-        "onehot_class":"passLocationType",
-        "superCategory": "play"
-    },
-    "rushLocationType_Unknown": {
-        "type": "onehot",
-        "onehot_class":"rushLocationType",
-        "superCategory": "play"
-    },
     "pff_runConceptPrimary_COUNTER": {
         "type": "onehot",
         "onehot_class":"pff_runConceptPrimary",
