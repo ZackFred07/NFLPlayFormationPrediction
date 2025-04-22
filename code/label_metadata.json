@@ -1,0 +1,1014 @@
+{
+    "playAction": {
+        "type": "bool",
+        "superCategory": "play"
+    },
+    "passTippedAtLine": {
+        "type": "bool",
+        "superCategory": "play"
+    },
+    "unblockedPressure": {
+        "type": "bool",
+        "superCategory": "play"
+    },
+    "qbSpike": {
+        "type": "bool",
+        "superCategory": "play"
+    },
+    "qbKneel": {
+        "type": "bool",
+        "superCategory": "play"
+    },
+    "qbSneak": {
+        "type": "bool",
+        "superCategory": "play"
+    },
+    "isDropback": {
+        "type": "bool",
+        "superCategory": "play"
+    },
+    "pff_runPassOption": {
+        "type": "bool",
+        "superCategory": "play"
+    },
+    "offenseFormation_EMPTY": {
+        "type": "onehot",
+        "onehot_class":"offenseFormation",
+        "superCategory": "formation"
+    },
+    "offenseFormation_I_FORM": {
+        "type": "onehot",
+        "onehot_class":"offenseFormation",
+        "superCategory": "formation"
+    },
+    "offenseFormation_JUMBO": {
+        "type": "onehot",
+        "onehot_class":"offenseFormation",
+        "superCategory": "formation"
+    },
+    "offenseFormation_PISTOL": {
+        "type": "onehot",
+        "onehot_class":"offenseFormation",
+        "superCategory": "formation"
+    },
+    "offenseFormation_SHOTGUN": {
+        "type": "onehot",
+        "onehot_class":"offenseFormation",
+        "superCategory": "formation"
+    },
+    "offenseFormation_SINGLEBACK": {
+        "type": "onehot",
+        "onehot_class":"offenseFormation",
+        "superCategory": "formation"
+    },
+    "offenseFormation_WILDCAT": {
+        "type": "onehot",
+        "onehot_class":"offenseFormation",
+        "superCategory": "formation"
+    },
+    "receiverAlignment_1x0": {
+        "type": "onehot",
+        "onehot_class":"receiverAlignment",
+        "superCategory": "formation"
+    },
+    "receiverAlignment_1x1": {
+        "type": "onehot",
+        "onehot_class":"receiverAlignment",
+        "superCategory": "formation"
+    },
+    "receiverAlignment_2x0": {
+        "type": "onehot",
+        "onehot_class":"receiverAlignment",
+        "superCategory": "formation"
+    },
+    "receiverAlignment_2x1": {
+        "type": "onehot",
+        "onehot_class":"receiverAlignment",
+        "superCategory": "formation"
+    },
+    "receiverAlignment_2x2": {
+        "type": "onehot",
+        "onehot_class":"receiverAlignment",
+        "superCategory": "formation"
+    },
+    "receiverAlignment_3x0": {
+        "type": "onehot",
+        "onehot_class":"receiverAlignment",
+        "superCategory": "formation"
+    },
+    "receiverAlignment_3x1": {
+        "type": "onehot",
+        "onehot_class":"receiverAlignment",
+        "superCategory": "formation"
+    },
+    "receiverAlignment_3x2": {
+        "type": "onehot",
+        "onehot_class":"receiverAlignment",
+        "superCategory": "formation"
+    },
+    "receiverAlignment_3x3": {
+        "type": "onehot",
+        "onehot_class":"receiverAlignment",
+        "superCategory": "formation"
+    },
+    "receiverAlignment_4x1": {
+        "type": "onehot",
+        "onehot_class":"receiverAlignment",
+        "superCategory": "formation"
+    },
+    "dropbackType_DESIGNED_ROLLOUT_LEFT": {
+        "type": "onehot",
+        "onehot_class":"dropbackType",
+        "superCategory": "play"
+    },
+    "dropbackType_DESIGNED_ROLLOUT_RIGHT": {
+        "type": "onehot",
+        "onehot_class":"dropbackType",
+        "superCategory": "play"
+    },
+    "dropbackType_DESIGNED_RUN": {
+        "type": "onehot",
+        "onehot_class":"dropbackType",
+        "superCategory": "play"
+    },
+    "dropbackType_SCRAMBLE": {
+        "type": "onehot",
+        "onehot_class":"dropbackType",
+        "superCategory": "play"
+    },
+    "dropbackType_SCRAMBLE_ROLLOUT_LEFT": {
+        "type": "onehot",
+        "onehot_class":"dropbackType",
+        "superCategory": "play"
+    },
+    "dropbackType_SCRAMBLE_ROLLOUT_RIGHT": {
+        "type": "onehot",
+        "onehot_class":"dropbackType",
+        "superCategory": "play"
+    },
+    "dropbackType_TRADITIONAL": {
+        "type": "onehot",
+        "onehot_class":"dropbackType",
+        "superCategory": "play"
+    },
+    "passLocationType_INSIDE_BOX": {
+        "type": "onehot",
+        "onehot_class":"passLocationType",
+        "superCategory": "play"
+    },
+    "passLocationType_OUTSIDE_LEFT": {
+        "type": "onehot",
+        "onehot_class":"passLocationType",
+        "superCategory": "play"
+    },
+    "passLocationType_OUTSIDE_RIGHT": {
+        "type": "onehot",
+        "onehot_class":"passLocationType",
+        "superCategory": "play"
+    },
+    "passLocationType_UNKNOWN": {
+        "type": "onehot",
+        "onehot_class":"passLocationType",
+        "superCategory": "play"
+    },
+    "passLocationType_Unknown": {
+        "type": "onehot",
+        "onehot_class":"passLocationType",
+        "superCategory": "play"
+    },
+    "rushLocationType_Unknown": {
+        "type": "onehot",
+        "onehot_class":"rushLocationType",
+        "superCategory": "play"
+    },
+    "pff_runConceptPrimary_COUNTER": {
+        "type": "onehot",
+        "onehot_class":"pff_runConceptPrimary",
+        "superCategory": "play"
+    },
+    "pff_runConceptPrimary_DRAW": {
+        "type": "onehot",
+        "onehot_class":"pff_runConceptPrimary",
+        "superCategory": "play"
+    },
+    "pff_runConceptPrimary_FB RUN": {
+        "type": "onehot",
+        "onehot_class":"pff_runConceptPrimary",
+        "superCategory": "play"
+    },
+    "pff_runConceptPrimary_INSIDE ZONE": {
+        "type": "onehot",
+        "onehot_class":"pff_runConceptPrimary",
+        "superCategory": "play"
+    },
+    "pff_runConceptPrimary_MAN": {
+        "type": "onehot",
+        "onehot_class":"pff_runConceptPrimary",
+        "superCategory": "play"
+    },
+    "pff_runConceptPrimary_OUTSIDE ZONE": {
+        "type": "onehot",
+        "onehot_class":"pff_runConceptPrimary",
+        "superCategory": "play"
+    },
+    "pff_runConceptPrimary_POWER": {
+        "type": "onehot",
+        "onehot_class":"pff_runConceptPrimary",
+        "superCategory": "play"
+    },
+    "pff_runConceptPrimary_PULL LEAD": {
+        "type": "onehot",
+        "onehot_class":"pff_runConceptPrimary",
+        "superCategory": "play"
+    },
+    "pff_runConceptPrimary_TRAP": {
+        "type": "onehot",
+        "onehot_class":"pff_runConceptPrimary",
+        "superCategory": "play"
+    },
+    "pff_runConceptPrimary_TRICK": {
+        "type": "onehot",
+        "onehot_class":"pff_runConceptPrimary",
+        "superCategory": "play"
+    },
+    "pff_runConceptPrimary_UNDEFINED": {
+        "type": "onehot",
+        "onehot_class":"pff_runConceptPrimary",
+        "superCategory": "play"
+    },
+    "pff_runConceptPrimary_Unknown": {
+        "type": "onehot",
+        "onehot_class":"pff_runConceptPrimary",
+        "superCategory": "play"
+    },
+    "pff_runConceptSecondary_QB RUNS": {
+        "type": "onehot",
+        "onehot_class":"pff_runConceptSecondary",
+        "superCategory": "play"
+    },
+    "pff_runConceptSecondary_READ OPTION": {
+        "type": "onehot",
+        "onehot_class":"pff_runConceptSecondary",
+        "superCategory": "play"
+    },
+    "pff_runConceptSecondary_Unknown": {
+        "type": "onehot",
+        "onehot_class":"pff_runConceptSecondary",
+        "superCategory": "play"
+    },
+    "pff_passCoverage_2-Man": {
+        "type": "onehot",
+        "onehot_class":"pff_passCoverage",
+        "superCategory": "play"
+    },
+    "pff_passCoverage_Bracket": {
+        "type": "onehot",
+        "onehot_class":"pff_passCoverage",
+        "superCategory": "play"
+    },
+    "pff_passCoverage_Cover 6-Left": {
+        "type": "onehot",
+        "onehot_class":"pff_passCoverage",
+        "superCategory": "play"
+    },
+    "pff_passCoverage_Cover-0": {
+        "type": "onehot",
+        "onehot_class":"pff_passCoverage",
+        "superCategory": "play"
+    },
+    "pff_passCoverage_Cover-1": {
+        "type": "onehot",
+        "onehot_class":"pff_passCoverage",
+        "superCategory": "play"
+    },
+    "pff_passCoverage_Cover-1 Double": {
+        "type": "onehot",
+        "onehot_class":"pff_passCoverage",
+        "superCategory": "play"
+    },
+    "pff_passCoverage_Cover-2": {
+        "type": "onehot",
+        "onehot_class":"pff_passCoverage",
+        "superCategory": "play"
+    },
+    "pff_passCoverage_Cover-3": {
+        "type": "onehot",
+        "onehot_class":"pff_passCoverage",
+        "superCategory": "play"
+    },
+    "pff_passCoverage_Cover-3 Cloud Left": {
+        "type": "onehot",
+        "onehot_class":"pff_passCoverage",
+        "superCategory": "play"
+    },
+    "pff_passCoverage_Cover-3 Cloud Right": {
+        "type": "onehot",
+        "onehot_class":"pff_passCoverage",
+        "superCategory": "play"
+    },
+    "pff_passCoverage_Cover-3 Double Cloud": {
+        "type": "onehot",
+        "onehot_class":"pff_passCoverage",
+        "superCategory": "play"
+    },
+    "pff_passCoverage_Cover-3 Seam": {
+        "type": "onehot",
+        "onehot_class":"pff_passCoverage",
+        "superCategory": "play"
+    },
+    "pff_passCoverage_Cover-6 Right": {
+        "type": "onehot",
+        "onehot_class":"pff_passCoverage",
+        "superCategory": "play"
+    },
+    "pff_passCoverage_Goal Line": {
+        "type": "onehot",
+        "onehot_class":"pff_passCoverage",
+        "superCategory": "play"
+    },
+    "pff_passCoverage_Miscellaneous": {
+        "type": "onehot",
+        "onehot_class":"pff_passCoverage",
+        "superCategory": "play"
+    },
+    "pff_passCoverage_Prevent": {
+        "type": "onehot",
+        "onehot_class":"pff_passCoverage",
+        "superCategory": "play"
+    },
+    "pff_passCoverage_Quarters": {
+        "type": "onehot",
+        "onehot_class":"pff_passCoverage",
+        "superCategory": "play"
+    },
+    "pff_passCoverage_Red Zone": {
+        "type": "onehot",
+        "onehot_class":"pff_passCoverage",
+        "superCategory": "play"
+    },
+    "pff_manZone_Man": {
+        "type": "onehot",
+        "onehot_class":"pff_passCoverage",
+        "superCategory": "play"
+    },
+    "pff_manZone_Other": {
+        "type": "onehot",
+        "onehot_class":"pff_manZone",
+        "superCategory": "play"
+    },
+    "pff_manZone_Zone": {
+        "type": "onehot",
+        "onehot_class":"pff_manZone",
+        "superCategory": "play"
+    },
+    "routeRanQB0_CORNER": {
+        "type": "onehot",
+        "onehot_class":"routeRanQB0",
+        "superCategory": "play"
+    },
+    "routeRanQB0_CROSS": {
+        "type": "onehot",
+        "onehot_class":"routeRanQB0",
+        "superCategory": "play"
+    },
+    "routeRanQB0_FLAT": {
+        "type": "onehot",
+        "onehot_class":"routeRanQB0",
+        "superCategory": "play"
+    },
+    "routeRanQB0_GO": {
+        "type": "onehot",
+        "onehot_class":"routeRanQB0",
+        "superCategory": "play"
+    },
+    "routeRanQB0_HITCH": {
+        "type": "onehot",
+        "onehot_class":"routeRanQB0",
+        "superCategory": "play"
+    },
+    "routeRanQB0_IN": {
+        "type": "onehot",
+        "onehot_class":"routeRanQB0",
+        "superCategory": "play"
+    },
+    "routeRanQB0_NA": {
+        "type": "onehot",
+        "onehot_class":"routeRanQB0",
+        "superCategory": "play"
+    },
+    "routeRanQB0_OUT": {
+        "type": "onehot",
+        "onehot_class":"routeRanQB0",
+        "superCategory": "play"
+    },
+    "routeRanQB0_POST": {
+        "type": "onehot",
+        "onehot_class":"routeRanQB0",
+        "superCategory": "play"
+    },
+    "routeRanQB0_SCREEN": {
+        "type": "onehot",
+        "onehot_class":"routeRanQB0",
+        "superCategory": "play"
+    },
+    "routeRanQB0_SLANT": {
+        "type": "onehot",
+        "onehot_class":"routeRanQB0",
+        "superCategory": "play"
+    },
+    "routeRanQB0_WHEEL": {
+        "type": "onehot",
+        "onehot_class":"routeRanQB0",
+        "superCategory": "play"
+    },
+    "routeRanWR0_ANGLE": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR0",
+        "superCategory": "play"
+    },
+    "routeRanWR0_CORNER": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR0",
+        "superCategory": "play"
+    },
+    "routeRanWR0_CROSS": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR0",
+        "superCategory": "play"
+    },
+    "routeRanWR0_FLAT": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR0",
+        "superCategory": "play"
+    },
+    "routeRanWR0_GO": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR0",
+        "superCategory": "play"
+    },
+    "routeRanWR0_HITCH": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR0",
+        "superCategory": "play"
+    },
+    "routeRanWR0_IN": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR0",
+        "superCategory": "play"
+    },
+    "routeRanWR0_NA": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR0",
+        "superCategory": "play"
+    },
+    "routeRanWR0_OUT": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR0",
+        "superCategory": "play"
+    },
+    "routeRanWR0_POST": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR0",
+        "superCategory": "play"
+    },
+    "routeRanWR0_SCREEN": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR0",
+        "superCategory": "play"
+    },
+    "routeRanWR0_SLANT": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR0",
+        "superCategory": "play"
+    },
+    "routeRanWR0_WHEEL": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR0",
+        "superCategory": "play"
+    },
+    "routeRanWR1_ANGLE": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR1",
+        "superCategory": "play"
+    },
+    "routeRanWR1_CORNER": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR1",
+        "superCategory": "play"
+    },
+    "routeRanWR1_CROSS": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR1",
+        "superCategory": "play"
+    },
+    "routeRanWR1_FLAT": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR1",
+        "superCategory": "play"
+    },
+    "routeRanWR1_GO": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR1",
+        "superCategory": "play"
+    },
+    "routeRanWR1_HITCH": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR1",
+        "superCategory": "play"
+    },
+    "routeRanWR1_IN": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR1",
+        "superCategory": "play"
+    },
+    "routeRanWR1_NA": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR1",
+        "superCategory": "play"
+    },
+    "routeRanWR1_OUT": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR1",
+        "superCategory": "play"
+    },
+    "routeRanWR1_POST": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR1",
+        "superCategory": "play"
+    },
+    "routeRanWR1_SCREEN": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR1",
+        "superCategory": "play"
+    },
+    "routeRanWR1_SLANT": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR1",
+        "superCategory": "play"
+    },
+    "routeRanWR1_WHEEL": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR1",
+        "superCategory": "play"
+    },
+    "routeRanWR2_ANGLE": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR2",
+        "superCategory": "play"
+    },
+    "routeRanWR2_CORNER": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR2",
+        "superCategory": "play"
+    },
+    "routeRanWR2_CROSS": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR2",
+        "superCategory": "play"
+    },
+    "routeRanWR2_FLAT": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR2",
+        "superCategory": "play"
+    },
+    "routeRanWR2_GO": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR2",
+        "superCategory": "play"
+    },
+    "routeRanWR2_HITCH": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR2",
+        "superCategory": "play"
+    },
+    "routeRanWR2_IN": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR2",
+        "superCategory": "play"
+    },
+    "routeRanWR2_NA": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR2",
+        "superCategory": "play"
+    },
+    "routeRanWR2_OUT": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR2",
+        "superCategory": "play"
+    },
+    "routeRanWR2_POST": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR2",
+        "superCategory": "play"
+    },
+    "routeRanWR2_SCREEN": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR2",
+        "superCategory": "play"
+    },
+    "routeRanWR2_SLANT": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR2",
+        "superCategory": "play"
+    },
+    "routeRanWR2_WHEEL": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR2",
+        "superCategory": "play"
+    },
+    "routeRanWR3_CORNER": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR3",
+        "superCategory": "play"
+    },
+    "routeRanWR3_CROSS": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR3",
+        "superCategory": "play"
+    },
+    "routeRanWR3_FLAT": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR3",
+        "superCategory": "play"
+    },
+    "routeRanWR3_GO": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR3",
+        "superCategory": "play"
+    },
+    "routeRanWR3_HITCH": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR3",
+        "superCategory": "play"
+    },
+    "routeRanWR3_IN": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR3",
+        "superCategory": "play"
+    },
+    "routeRanWR3_NA": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR3",
+        "superCategory": "play"
+    },
+    "routeRanWR3_OUT": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR3",
+        "superCategory": "play"
+    },
+    "routeRanWR3_POST": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR3",
+        "superCategory": "play"
+    },
+    "routeRanWR3_SCREEN": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR3",
+        "superCategory": "play"
+    },
+    "routeRanWR3_SLANT": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR3",
+        "superCategory": "play"
+    },
+    "routeRanWR4_CORNER": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR4",
+        "superCategory": "play"
+    },
+    "routeRanWR4_GO": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR4",
+        "superCategory": "play"
+    },
+    "routeRanWR4_NA": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR4",
+        "superCategory": "play"
+    },
+    "routeRanWR4_SLANT": {
+        "type": "onehot",
+        "onehot_class":"routeRanWR4",
+        "superCategory": "play"
+    },
+    "routeRanRB0_ANGLE": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB0",
+        "superCategory": "play"
+    },
+    "routeRanRB0_CORNER": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB0",
+        "superCategory": "play"
+    },
+    "routeRanRB0_CROSS": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB0",
+        "superCategory": "play"
+    },
+    "routeRanRB0_FLAT": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB0",
+        "superCategory": "play"
+    },
+    "routeRanRB0_GO": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB0",
+        "superCategory": "play"
+    },
+    "routeRanRB0_HITCH": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB0",
+        "superCategory": "play"
+    },
+    "routeRanRB0_IN": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB0",
+        "superCategory": "play"
+    },
+    "routeRanRB0_NA": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB0",
+        "superCategory": "play"
+    },
+    "routeRanRB0_OUT": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB0",
+        "superCategory": "play"
+    },
+    "routeRanRB0_POST": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB0",
+        "superCategory": "play"
+    },
+    "routeRanRB0_SCREEN": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB0",
+        "superCategory": "play"
+    },
+    "routeRanRB0_SLANT": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB0",
+        "superCategory": "play"
+    },
+    "routeRanRB0_WHEEL": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB0",
+        "superCategory": "play"
+    },
+    "routeRanRB1_ANGLE": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB1",
+        "superCategory": "play"
+    },
+    "routeRanRB1_CROSS": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB1",
+        "superCategory": "play"
+    },
+    "routeRanRB1_FLAT": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB1",
+        "superCategory": "play"
+    },
+    "routeRanRB1_GO": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB1",
+        "superCategory": "play"
+    },
+    "routeRanRB1_HITCH": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB1",
+        "superCategory": "play"
+    },
+    "routeRanRB1_IN": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB1",
+        "superCategory": "play"
+    },
+    "routeRanRB1_NA": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB1",
+        "superCategory": "play"
+    },
+    "routeRanRB1_OUT": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB1",
+        "superCategory": "play"
+    },
+    "routeRanRB1_POST": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB1",
+        "superCategory": "play"
+    },
+    "routeRanRB1_SCREEN": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB1",
+        "superCategory": "play"
+    },
+    "routeRanRB1_SLANT": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB1",
+        "superCategory": "play"
+    },
+    "routeRanRB1_WHEEL": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB1",
+        "superCategory": "play"
+    },
+    "routeRanRB2_NA": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB2",
+        "superCategory": "play"
+    },
+    "routeRanRB2_WHEEL": {
+        "type": "onehot",
+        "onehot_class":"routeRanRB2",
+        "superCategory": "play"
+    },
+    "routeRanTE0_ANGLE": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE0",
+        "superCategory": "play"
+    },
+    "routeRanTE0_CORNER": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE0",
+        "superCategory": "play"
+    },
+    "routeRanTE0_CROSS": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE0",
+        "superCategory": "play"
+    },
+    "routeRanTE0_FLAT": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE0",
+        "superCategory": "play"
+    },
+    "routeRanTE0_GO": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE0",
+        "superCategory": "play"
+    },
+    "routeRanTE0_HITCH": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE0",
+        "superCategory": "play"
+    },
+    "routeRanTE0_IN": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE0",
+        "superCategory": "play"
+    },
+    "routeRanTE0_NA": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE0",
+        "superCategory": "play"
+    },
+    "routeRanTE0_OUT": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE0",
+        "superCategory": "play"
+    },
+    "routeRanTE0_POST": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE0",
+        "superCategory": "play"
+    },
+    "routeRanTE0_SCREEN": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE0",
+        "superCategory": "play"
+    },
+    "routeRanTE0_SLANT": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE0",
+        "superCategory": "play"
+    },
+    "routeRanTE0_WHEEL": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE0",
+        "superCategory": "play"
+    },
+    "routeRanTE1_ANGLE": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE1",
+        "superCategory": "play"
+    },
+    "routeRanTE1_CORNER": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE1",
+        "superCategory": "play"
+    },
+    "routeRanTE1_CROSS": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE1",
+        "superCategory": "play"
+    },
+    "routeRanTE1_FLAT": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE1",
+        "superCategory": "play"
+    },
+    "routeRanTE1_GO": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE1",
+        "superCategory": "play"
+    },
+    "routeRanTE1_HITCH": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE1",
+        "superCategory": "play"
+    },
+    "routeRanTE1_IN": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE1",
+        "superCategory": "play"
+    },
+    "routeRanTE1_NA": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE1",
+        "superCategory": "play"
+    },
+    "routeRanTE1_OUT": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE1",
+        "superCategory": "play"
+    },
+    "routeRanTE1_POST": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE1",
+        "superCategory": "play"
+    },
+    "routeRanTE1_SCREEN": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE1",
+        "superCategory": "play"
+    },
+    "routeRanTE1_SLANT": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE1",
+        "superCategory": "play"
+    },
+    "routeRanTE1_WHEEL": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE1",
+        "superCategory": "play"
+    },
+    "routeRanTE2_CORNER": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE2",
+        "superCategory": "play"
+    },
+    "routeRanTE2_CROSS": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE2",
+        "superCategory": "play"
+    },
+    "routeRanTE2_FLAT": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE2",
+        "superCategory": "play"
+    },
+    "routeRanTE2_GO": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE2",
+        "superCategory": "play"
+    },
+    "routeRanTE2_HITCH": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE2",
+        "superCategory": "play"
+    },
+    "routeRanTE2_IN": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE2",
+        "superCategory": "play"
+    },
+    "routeRanTE2_NA": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE2",
+        "superCategory": "play"
+    },
+    "routeRanTE2_OUT": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE2",
+        "superCategory": "play"
+    },
+    "routeRanTE2_POST": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE2",
+        "superCategory": "play"
+    },
+    "routeRanTE2_SCREEN": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE2",
+        "superCategory": "play"
+    },
+    "routeRanTE2_SLANT": {
+        "type": "onehot",
+        "onehot_class":"routeRanTE2",
+        "superCategory": "play"
+    }
+}

@@ -2,20 +2,54 @@ import torch
 import torch.nn as nn
 
 class CNNLSTMClassifier(nn.Module):
-    def __init__(self, input_dim=6, hidden_dim=128, num_layers=1, num_outputs=3, output_dims=(8, 10, 6)):
+    def __init__(self, input_channels=6, lstm_hidden=128, num_outputs=96, output_seq=False):
         super().__init__()
-        self.conv1 = nn.Conv1d(input_dim, 32, kernel_size=3, padding=1)
-        self.relu = nn.ReLU()
-        self.lstm = nn.LSTM(32, hidden_dim, num_layers, batch_first=True)
-        self.fc_route = nn.Linear(hidden_dim, output_dims[0])
-        self.fc_play = nn.Linear(hidden_dim, output_dims[1])
-        self.fc_form = nn.Linear(hidden_dim, output_dims[2])
+        self.output_seq = output_seq
 
-    def forward(self, x):  # x: (B, P, T, F)
-        B, P, T, F = x.shape
-        x = x.view(B * P, T, F).permute(0, 2, 1)  # (B*P, F, T)
-        x = self.relu(self.conv1(x))  # (B*P, 32, T)
-        x = x.permute(0, 2, 1)  # (B*P, T, 32)
-        _, (h_n, _) = self.lstm(x)  # (1, B*P, hidden)
-        h_n = h_n[-1].view(B, P, -1).mean(dim=1)  # (B, hidden)
-        return torch.sigmoid(self.fc_route(h_n)), torch.sigmoid(self.fc_play(h_n)), torch.sigmoid(self.fc_form(h_n))
+        self.cnn = nn.Sequential(
+            nn.Conv2d(input_channels, 32, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.AdaptiveAvgPool2d((1, 1)),  # output: [32, 1, 1]
+        )
+
+        self.lstm = nn.LSTM(input_size=32, hidden_size=lstm_hidden, batch_first=False)
+
+        self.static_fc = nn.Linear(10, 32)  # adjust to your actual static feature size
+
+        self.head = nn.Sequential(
+            nn.Linear(lstm_hidden + 32, 128),
+            nn.ReLU(),
+            nn.Linear(128, num_outputs),
+        )
+
+    def forward(self, x_dynamic, x_static):
+        """
+        x_dynamic: [1, T, C, H, W] or [T, C, H, W] if batch is squeezed
+        x_static: [1, F] or [F]
+        """
+        if x_dynamic.ndim == 5:
+            x_dynamic = x_dynamic.squeeze(0)  # [T, C, H, W]
+        if x_static.ndim == 2:
+            x_static = x_static.squeeze(0)    # [F]
+
+        T, C, H, W = x_dynamic.shape
+
+        cnn_feats = []
+        for t in range(T):
+            ft = self.cnn(x_dynamic[t].unsqueeze(0)).squeeze()  # [32]
+            cnn_feats.append(ft)
+
+        cnn_feats = torch.stack(cnn_feats)  # [T, 32]
+
+        lstm_out, _ = self.lstm(cnn_feats.unsqueeze(1))  # [T, 1, H]
+        lstm_out = lstm_out.squeeze(1)  # [T, H]
+
+        x_static_proj = self.static_fc(x_static)  # [32]
+
+        outputs = []
+        for t in range(T):
+            fused = torch.cat([lstm_out[t], x_static_proj], dim=-1)
+            logits = self.head(fused)  # [num_labels]
+            outputs.append(logits)
+
+        return outputs  # List[T] of [num_labels]

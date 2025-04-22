@@ -459,14 +459,7 @@ class NFL_Data_Preprocessing:
         self.local_features_df.drop(["o", "dir"], axis=1, inplace=True)
         self.global_feature_df.drop(["playDirection"], axis=1, inplace=True)
 
-        print(tracking_df[tracking_df["frameType"] == "SNAP"]["playId"].nunique())
-        print(self.local_features_df["playId"].nunique())
-
-        print_nan_rows(
-            self.local_features_df[["gameId", "playId", "ball_y"]],
-            "Ball NaNs",
-            max_rows=10,
-        )
+        print(list(self.encoded_labels.columns))
         
 
     @staticmethod
@@ -602,4 +595,4 @@ class NFL_Data_Preprocessing:
 
 if __name__ == "__main__":
     data_preprocessor = NFL_Data_Preprocessing()
-    data_preprocessor.create_ST_Dataset_2D_Tensors()
+    # data_preprocessor.create_ST_Dataset_2D_Tensors()

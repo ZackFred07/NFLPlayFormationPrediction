@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   trainer:
     image: pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime
@@ -12,7 +10,7 @@ services:
     volumes:
       - ./environment.yml:/tmp/environment.yml
       - ./code:/app
-      - ./data:/mnt/data
+      - /mnt/external_drive/ml-data:/mnt/data
       - ./outputs:/mnt/outputs
     working_dir: /app
     command: >

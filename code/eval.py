@@ -1,7 +1,0 @@
-# NFL Play prediction 
-
-##
-
-##
-
-##
