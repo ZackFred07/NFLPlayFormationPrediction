@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 class CNNLSTMClassifier(nn.Module):
-    def __init__(self, input_channels=27, lstm_hidden=128, num_outputs=96, output_seq=False):
+    def __init__(self, input_channels=27, lstm_hidden=128, num_outputs=202, output_seq=False):
         super().__init__()
         self.output_seq = output_seq
 
