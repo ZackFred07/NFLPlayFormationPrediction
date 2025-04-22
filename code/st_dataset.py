@@ -4,6 +4,7 @@ import os
 import json
 import numpy as np
 from tqdm import tqdm
+from torch.utils.data import Subset
 
 class TwoDimensionalTensorDataset(torch.utils.data.Dataset):
     def __init__(self, tensor_path_or_dir=os.path.join(os.environ["DATA_DIR"], "ST_2D_Tensor"), label_metadata_path="label_metadata.json"):
@@ -63,3 +64,12 @@ class TwoDimensionalTensorDataset(torch.utils.data.Dataset):
             raise RuntimeError("Sequence lengths not available.")
         self.max_timesteps = int(np.percentile(self.seq_lens, percentile))
         return self
+
+
+class TestTwoDimensionalTensorDataset(Subset):
+    def __init__(self, base_dataset):
+        # Only use the first 10 indices
+        super().__init__(base_dataset, indices=list(range(10)))
+
+    def truncate_by_percentile(self, percentile):
+        self.dataset.truncate_by_percentile(percentile)

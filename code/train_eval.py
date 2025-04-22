@@ -7,12 +7,12 @@ import gc
 import time
 import pandas as pd
 import torch
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, random_split, Subset
 import torch.nn as nn
 import torch.optim as optim
 from sklearn.metrics import precision_score, recall_score, f1_score, auc
 from tqdm import tqdm
-from st_dataset import TwoDimensionalTensorDataset
+from st_dataset import TwoDimensionalTensorDataset, TestTwoDimensionalTensorDataset
 from cnn_lstm import CNNLSTMClassifier
 
 
@@ -26,162 +26,9 @@ def compute_group_ttc(ttc_scores, label_names, group_map):
     return {g: round(sum(v) / len(v), 4) if v else 1.0 for g, v in ttc_by_group.items()}
 
 
-# Function that will run evaluation on the model
-def evaluate(
-    model, dataset, device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
-):
-    model.to(device)
-    loader = DataLoader(dataset, batch_size=None)
-    model.eval()
-
-    y_true, y_pred = [], []
-    ttc_scores = []
-    acc_time_curve = []
-
-    with torch.no_grad():
-        # For each data point
-        for x, x_static, y in loader:
-            # TODO: Check dim for both x's may need to unsqueeze
-            x, x_static, y = x.to(device), x_static.to(device), y.to(device)
-
-            # run inference
-            outputs = model(x, x_static)
-
-            # Get timesteps
-            T = len(outputs)
-
-            # Get sequnce of  predictions
-            preds = [torch.sigmoid(o[0]) > 0.5 for o in outputs]
-
-            # Get latest prediction
-            final_pred = preds[-1]
-
-            # Add true and predicted
-            y_true.append(y.cpu())
-            y_pred.append(final_pred.cpu())
-
-            # Time to correct (TTC)
-            for t in range(T):
-                # If the entire thing got it all right set the frame score
-                if preds[t].eq(y.bool()).all():
-                    ttc_scores.append((None, t / T))
-                    break
-            else:
-                # Else it got none of it right
-                ttc_scores.append((None, 1.0))
-
-            # TTC per class
-            for class_idx in range(y.size(0)):
-                for t in range(T):
-                    if preds[t][class_idx] == y[class_idx]:
-                        ttc_scores.append((class_idx, t / T))
-                        break
-
-            # AUATC
-            for t in range(T):
-                acc = preds[t].eq(y.bool()).float().mean().item()
-                acc_time_curve.append((t / T, acc))
-
-    # Metric computation
-    y_true = torch.stack(y_true).numpy()
-    y_pred = torch.stack(y_pred).numpy()
-
-    precision_micro = precision_score(y_true, y_pred, average="micro")
-    recall_micro = recall_score(y_true, y_pred, average="micro")
-    f1_micro = f1_score(y_true, y_pred, average="micro")
-
-    auatc = auc(*zip(*acc_time_curve)) if acc_time_curve else 0.0
-    avg_ttc = sum([ttc for idx, ttc in ttc_scores if idx is None]) / max(
-        1, sum(1 for idx, _ in ttc_scores if idx is None)
-    )
-
-    print("\n--- Overall Per-Label (Micro) ---")
-    print(
-        f"Precision: {precision_micro:.4f}, Recall: {recall_micro:.4f}, F1: {f1_micro:.4f}"
-    )
-    print(f"Avg TTC: {avg_ttc:.4f}, AUATC: {auatc:.4f}")
-
-    # Load the json with label information
-    with open("label_metadata.json") as f:
-        label_metadata = json.load(f)
-
-    label_names = list(label_metadata.keys())
-
-    # Create maps
-    onehot_class_map = defaultdict(list)
-    super_cat_map = defaultdict(list)
-    for label, info in label_metadata.items():
-        if info.get("type") == "onehot" and "onehot_class" in info:
-            onehot_class_map[info["onehot_class"]].append(label)
-        if "superCategory" in info:
-            super_cat_map[info["superCategory"]].append(label)
-
-    # Calculation of onehot metrics
-    onehot_metrics = {}
-    for group, label_list in onehot_class_map.items():
-        indices = [label_names.index(lbl) for lbl in label_list if lbl in label_names]
-        if not indices:
-            continue
-        y_true_group = y_true[:, indices]
-        y_pred_group = y_pred[:, indices]
-        onehot_metrics[group] = {
-            "precision": precision_score(
-                y_true_group, y_pred_group, average="micro", zero_division=0
-            ),
-            "recall": recall_score(
-                y_true_group, y_pred_group, average="micro", zero_division=0
-            ),
-            "f1": f1_score(
-                y_true_group, y_pred_group, average="micro", zero_division=0
-            ),
-        }
-
-    # Calculation of super metrics
-    super_metrics = {}
-    for group, label_list in super_cat_map.items():
-        indices = [label_names.index(lbl) for lbl in label_list if lbl in label_names]
-        if not indices:
-            continue
-        y_true_group = y_true[:, indices]
-        y_pred_group = y_pred[:, indices]
-        super_metrics[group] = {
-            "precision": precision_score(
-                y_true_group, y_pred_group, average="micro", zero_division=0
-            ),
-            "recall": recall_score(
-                y_true_group, y_pred_group, average="micro", zero_division=0
-            ),
-            "f1": f1_score(
-                y_true_group, y_pred_group, average="micro", zero_division=0
-            ),
-        }
-
-    # TTCs calculations
-    classwise_ttc = [(idx, ttc) for idx, ttc in ttc_scores if idx is not None]
-    onehot_ttc = compute_group_ttc(classwise_ttc, label_names, onehot_metrics)
-    super_ttc = compute_group_ttc(classwise_ttc, label_names, super_metrics)
-
-    # Save everything as a csv
-    super_df = pd.DataFrame(super_metrics).T
-    super_df["ttc"] = pd.Series(super_ttc)
-    onehot_df = pd.DataFrame(onehot_metrics).T
-    onehot_df["ttc"] = pd.Series(onehot_ttc)
-
-    super_csv_path = "super_category_metrics.csv"
-    onehot_csv_path = "onehot_class_metrics.csv"
-    super_df.to_csv(super_csv_path)
-    onehot_df.to_csv(onehot_csv_path)
-
-    print(f"\nSaved CSVs:\n  {super_csv_path}\n  {onehot_csv_path}")
-
-
 # Train through different percentiles of the timeline
-def curriculum_train(
-    model,
-    dataset,
-    epochs=10,
-    lr=1e-3,
-    percentile_schedule=[5, 10, 15, 20, 25, 30, 40, 50, 70, 90, 100],
+def train_eval(
+    model, dataset, epochs=10, lr=1e-3, percentile_schedule=[10, 20, 40, 50, 75]
 ):
     print("Start training")
     # Train test split using torch
@@ -195,7 +42,6 @@ def curriculum_train(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
-    # Set optimizer and loss TODO: set to that custom loss
     optimizer = optim.Adam(model.parameters(), lr=lr)
     criterion = nn.BCEWithLogitsLoss()
 
@@ -211,14 +57,14 @@ def curriculum_train(
 
         # train_dataset.dataset.truncate_by_percentile(percentile)
         # test_dataset.dataset.truncate_by_percentile(percentile)
-        
+
         train_dataset.dataset.truncate_by_percentile(0.01)
         test_dataset.dataset.truncate_by_percentile(0.01)
 
         train_loader = DataLoader(train_dataset, batch_size=None, shuffle=True)
         test_loader = DataLoader(test_dataset, batch_size=None)
 
-        for x, x_static, y in tqdm(train_loader, desc=f"Epoch {epoch + 1}"):
+        for x, x_static, y in tqdm(train_loader, desc=f"Training"):
             x, x_static, y = (
                 x.to(device),
                 x_static.to(device),
@@ -226,7 +72,7 @@ def curriculum_train(
             )
 
             # Make predictions
-            outputs = model(x, x_static) # List[T] of [num_labels]
+            outputs = model(x, x_static)  # List[T] of [num_labels]
             pred = torch.stack(outputs, dim=0)[-1]  # shape: [num_labels]
 
             # Backpropagate + Optimizer adjustments
@@ -252,11 +98,13 @@ def curriculum_train(
 
             y_true, y_pred = [], []
             ttc_scores = []
-            acc_time_curve = []
+            acc_time_curve_by_class = defaultdict(
+                list
+            )  # {class_idx: [(t/T, acc), ...]}
 
             with torch.no_grad():
                 # For each data point
-                for x, x_static, y in test_loader:
+                for x, x_static, y in tqdm(test_loader, "Testing"):
 
                     x, x_static, y = x.to(device), x_static.to(device), y.to(device)
 
@@ -267,7 +115,9 @@ def curriculum_train(
                     T = len(outputs)
 
                     # Get sequnce of  predictions
-                    preds = [(torch.sigmoid(o) > 0.5) for o in outputs]  # List[T] of [num_labels] boolean tensors
+                    preds = [
+                        (torch.sigmoid(o) > 0.5) for o in outputs
+                    ]  # List[T] of [num_labels] boolean tensors
 
                     # Get latest prediction
                     final_pred = preds[-1]
@@ -293,29 +143,45 @@ def curriculum_train(
                                 ttc_scores.append((class_idx, t / T))
                                 break
 
-                    # AUATC
                     for t in range(T):
-                        acc = preds[t].eq(y.bool()).float().mean().item()
-                        acc_time_curve.append((t / T, acc))
+                        pred_t = preds[t]  # shape: [num_labels]
+                        correct_t = pred_t.eq(y.bool())  # shape: [num_labels]
+
+                        for class_idx, correct in enumerate(correct_t):
+                            acc_time_curve_by_class[class_idx].append(
+                                (t / T, float(correct))
+                            )
 
             # Metric computation
-            y_true = torch.stack(y_true).numpy()
-            y_pred = torch.stack(y_pred).numpy()
+            y_true = torch.stack(y_true).to(torch.float32).numpy()
+            y_pred = torch.stack(y_pred).to(torch.float32).numpy()
 
             precision_micro = precision_score(y_true, y_pred, average="micro")
             recall_micro = recall_score(y_true, y_pred, average="micro")
             f1_micro = f1_score(y_true, y_pred, average="micro")
 
-            auatc = auc(*zip(*acc_time_curve)) if acc_time_curve else 0.0
-            avg_ttc = sum([ttc for idx, ttc in ttc_scores if idx is None]) / max(
-                1, sum(1 for idx, _ in ttc_scores if idx is None)
-            )
+            auatc_by_class = {}
+            for class_idx, curve in acc_time_curve_by_class.items():
+                # Group by timestep
+                acc_dict = defaultdict(list)
+                for t, acc in curve:
+                    acc_dict[t].append(acc)
+
+                # Average at each t, then compute AUC
+                x_vals, y_vals = zip(
+                    *sorted((t, np.mean(accs)) for t, accs in acc_dict.items())
+                )
+
+                if len(set(x_vals)) > 1:  # Need at least two distinct x-values
+                    auatc_by_class[class_idx] = auc(x_vals, y_vals)
+                else:
+                    auatc_by_class[class_idx] = 0.0
 
             print("\n--- Overall Per-Label (Micro) ---")
             print(
                 f"Precision: {precision_micro:.4f}, Recall: {recall_micro:.4f}, F1: {f1_micro:.4f}"
             )
-            print(f"Avg TTC: {avg_ttc:.4f}, AUATC: {auatc:.4f}")
+            # print(f"Avg TTC: {avg_ttc:.4f}, AUATC: {auatc:.4f}")
 
             # Load the json with label information
             with open("label_metadata.json") as f:
@@ -323,79 +189,48 @@ def curriculum_train(
 
             label_names = list(label_metadata.keys())
 
-            # Create maps
+            # Create mappings from the metadata json file
             onehot_class_map = defaultdict(list)
-            super_cat_map = defaultdict(list)
             for label, info in label_metadata.items():
                 if info.get("type") == "onehot" and "onehot_class" in info:
                     onehot_class_map[info["onehot_class"]].append(label)
-                if "superCategory" in info:
-                    super_cat_map[info["superCategory"]].append(label)
 
             # Calculation of onehot metrics
             onehot_metrics = {}
             for group, label_list in onehot_class_map.items():
-                indices = [
-                    label_names.index(lbl) for lbl in label_list if lbl in label_names
-                ]
+                indices = [label_names.index(lbl) for lbl in label_list if lbl in label_names]
                 if not indices:
                     continue
+
                 y_true_group = y_true[:, indices]
-                y_pred_group = y_pred[:, indices]
+                y_pred_group_raw = y_pred_raw[:, indices]  # logits before thresholding
+
+                # Softmax per row (per sample)
+                softmaxed = torch.softmax(torch.tensor(y_pred_group_raw), dim=1).numpy()
+
+                # Choose the argmax prediction as 1-hot prediction
+                y_pred_group = np.zeros_like(softmaxed)
+                y_pred_group[np.arange(len(softmaxed)), np.argmax(softmaxed, axis=1)] = 1
+
                 onehot_metrics[group] = {
-                    "precision": precision_score(
-                        y_true_group, y_pred_group, average="micro", zero_division=0
-                    ),
-                    "recall": recall_score(
-                        y_true_group, y_pred_group, average="micro", zero_division=0
-                    ),
-                    "f1": f1_score(
-                        y_true_group, y_pred_group, average="micro", zero_division=0
-                    ),
+                    "precision": precision_score(y_true_group, y_pred_group, average="micro", zero_division=0),
+                    "recall": recall_score(y_true_group, y_pred_group, average="micro", zero_division=0),
+                    "f1": f1_score(y_true_group, y_pred_group, average="micro", zero_division=0),
                 }
 
-            # Calculation of super metrics
-            super_metrics = {}
-            for group, label_list in super_cat_map.items():
-                indices = [
-                    label_names.index(lbl) for lbl in label_list if lbl in label_names
-                ]
-                if not indices:
-                    continue
-                y_true_group = y_true[:, indices]
-                y_pred_group = y_pred[:, indices]
-                super_metrics[group] = {
-                    "precision": precision_score(
-                        y_true_group, y_pred_group, average="micro", zero_division=0
-                    ),
-                    "recall": recall_score(
-                        y_true_group, y_pred_group, average="micro", zero_division=0
-                    ),
-                    "f1": f1_score(
-                        y_true_group, y_pred_group, average="micro", zero_division=0
-                    ),
-                }
-
-            # TTCs calculations
+            # Time to classify calculations
             classwise_ttc = [(idx, ttc) for idx, ttc in ttc_scores if idx is not None]
             onehot_ttc = compute_group_ttc(classwise_ttc, label_names, onehot_metrics)
-            super_ttc = compute_group_ttc(classwise_ttc, label_names, super_metrics)
 
-            # Save everything as a csv
-            super_df = pd.DataFrame(super_metrics).T
-            super_df["ttc"] = pd.Series(super_ttc)
+            # Save csvs
             onehot_df = pd.DataFrame(onehot_metrics).T
             onehot_df["ttc"] = pd.Series(onehot_ttc)
 
-            super_csv_path = "super_category_metrics.csv"
             onehot_csv_path = "onehot_class_metrics.csv"
-            super_df.to_csv(super_csv_path)
             onehot_df.to_csv(onehot_csv_path)
-
-            print(f"\nSaved CSVs:\n  {super_csv_path}\n  {onehot_csv_path}")
-
 
 if __name__ == "__main__":
     model = CNNLSTMClassifier().to(torch.bfloat16)
     dataset = TwoDimensionalTensorDataset()
-    curriculum_train(model=model, dataset=dataset)
+    dataset = TestTwoDimensionalTensorDataset(dataset) # This is for debugging
+    train_eval(model=model, dataset=dataset)

@@ -1,5 +1,6 @@
 import os
 import glob
+import random
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -516,15 +517,29 @@ class NFL_Data_Preprocessing:
         # Group by play
         grouped = self.local_features_df.groupby(["gameId", "playId"])
         
-        for (gameId, playId), play_df in tqdm(grouped, desc="Creating Heatmaps"):
+        group_keys = list(grouped.groups.keys())
+        random.shuffle(group_keys)
+        
+        max_plays = 1500
+        processed_plays = 0
+        
+        for (gameId, playId) in tqdm(group_keys, desc="Creating Heatmaps"):
+            if processed_plays >= max_plays:
+                break
+            
+            
+            play_df = grouped.get_group((gameId, playId))
+            
             play_heatmaps = []
             save_path = os.path.join(
                 self.data_dir, "ST_2D_Tensor", f"{gameId}_{playId}.pt"
             )
             print(len(play_df))
             
+            # Memory constraint
             if(len(play_df) > 5500):
                 continue
+            
             frame_groups = list(play_df.groupby("frameId"))
             for _, frame_df in frame_groups[::2]:  # Step size 2
                 heatmap = self.create_heatmap(
@@ -578,6 +593,9 @@ class NFL_Data_Preprocessing:
 
             # Save to disk
             torch.save((play_tensor, global_tensor, label_tensor), save_path)
+            
+            # Increment after successful processing
+            processed_plays += 1
 
     def tabular(self):
 
