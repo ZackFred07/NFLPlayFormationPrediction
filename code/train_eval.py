@@ -11,7 +11,7 @@ import torch
 from torch.utils.data import DataLoader, random_split, Subset
 import torch.nn as nn
 import torch.optim as optim
-from sklearn.metrics import precision_score, recall_score, f1_score, auc
+from sklearn.metrics import precision_score, recall_score, f1_score, auc, accuracy_score
 from tqdm import tqdm
 from st_dataset import TwoDimensionalTensorDataset, TestTwoDimensionalTensorDataset
 from cnn_lstm import CNNLSTMClassifier
@@ -39,6 +39,7 @@ def train_eval(
     lr=1e-3,
     percentile_schedule=[10, 20, 40, 50, 75, 100],
     name="default",
+    device="cuda"
 ):
     print("Start training")
     best_loss = np.inf
@@ -50,7 +51,6 @@ def train_eval(
     )
 
     # Send model to gpu
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=lr)
@@ -162,7 +162,7 @@ def train_eval(
                 r = recall_score(y_true[:, i], y_pred[:, i], zero_division=0)
                 f = f1_score(y_true[:, i], y_pred[:, i], zero_division=0)
                 per_label_metrics.append(
-                    {"label": label, "precision": p, "recall": r, "f1": f}
+                    {"label": label, "accuracy":a, "precision": p, "recall": r, "f1": f}
                 )
 
             # Softmax-Based Onehot Metrics
@@ -181,17 +181,19 @@ def train_eval(
                 softmaxed = torch.softmax(torch.tensor(logits_group), dim=1).numpy()
                 pred_onehot = np.zeros_like(softmaxed)
                 pred_onehot[np.arange(len(softmaxed)), np.argmax(softmaxed, axis=1)] = 1
-
+                a = accuracy_score(
+                    true_group, pred_onehot, average="macro", zero_division=0
+                )
                 p = precision_score(
-                    true_group, pred_onehot, average="micro", zero_division=0
+                    true_group, pred_onehot, average="macro", zero_division=0
                 )
                 r = recall_score(
-                    true_group, pred_onehot, average="micro", zero_division=0
+                    true_group, pred_onehot, average="macro", zero_division=0
                 )
-                f = f1_score(true_group, pred_onehot, average="micro", zero_division=0)
+                f = f1_score(true_group, pred_onehot, average="macro", zero_division=0)
 
                 onehot_metrics.append(
-                    {"group": group, "precision": p, "recall": r, "f1": f}
+                    {"group": group, "accuracy":a, "precision": p, "recall": r, "f1": f}
                 )
 
         # print eveything
@@ -242,7 +244,7 @@ def train_eval(
             "a",
             newline="",
         ) as f:
-            fieldnames = ["epoch", "group", "precision", "recall", "f1"]
+            fieldnames = ["epoch", "group", "accuracy", "precision", "recall", "f1"]
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             if epoch == 0:
                 writer.writeheader()
@@ -268,6 +270,7 @@ def main(args):
         lr=args.lr,
         percentile_schedule=args.percentiles,
         name=args.name,
+        device=args.device
     )
 
 
@@ -288,7 +291,8 @@ if __name__ == "__main__":
         help="List of percentile values for curriculum schedule",
     )
     parser.add_argument("--name", type=str, default="unnamed")
-
+    parser.add_argument("--device", type=str, default="cuda")
+    
     args = parser.parse_args()
     main(args)
 

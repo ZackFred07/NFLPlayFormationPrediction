@@ -1,4 +1,6 @@
 data/*
 .vscode
 nohup.out
+nohup2.out
 __pycache__
+**/checkpoints
