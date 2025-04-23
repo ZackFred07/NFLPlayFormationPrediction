@@ -182,7 +182,7 @@ def train_eval(
                 pred_onehot = np.zeros_like(softmaxed)
                 pred_onehot[np.arange(len(softmaxed)), np.argmax(softmaxed, axis=1)] = 1
                 a = accuracy_score(
-                    true_group, pred_onehot, average="macro", zero_division=0
+                    true_group, pred_onehot
                 )
                 p = precision_score(
                     true_group, pred_onehot, average="macro", zero_division=0
@@ -295,8 +295,3 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     main(args)
-
-    # model = CNNLSTMClassifier().to(torch.bfloat16)
-    # dataset = TwoDimensionalTensorDataset()
-
-    # train_eval(model=model, dataset=dataset)
