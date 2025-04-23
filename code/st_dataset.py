@@ -65,7 +65,7 @@ class TwoDimensionalTensorDataset(torch.utils.data.Dataset):
         self.max_timesteps = int(np.percentile(self.seq_lens, percentile))
         return self
 
-
+# contains 10 items for Debugging
 class TestTwoDimensionalTensorDataset(Subset):
     def __init__(self, base_dataset):
         # Only use the first 10 indices

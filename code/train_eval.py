@@ -1,4 +1,5 @@
 from collections import defaultdict
+import csv
 import json
 import os
 import numpy as np
@@ -16,6 +17,10 @@ from st_dataset import TwoDimensionalTensorDataset, TestTwoDimensionalTensorData
 from cnn_lstm import CNNLSTMClassifier
 
 
+output_dir = os.environ["OUTPUT_DIR"]
+best_loss = float("inf")
+
+
 def compute_group_ttc(ttc_scores, label_names, group_map):
     ttc_by_group = defaultdict(list)
     for class_idx, ttc in ttc_scores:
@@ -28,9 +33,15 @@ def compute_group_ttc(ttc_scores, label_names, group_map):
 
 # Train through different percentiles of the timeline
 def train_eval(
-    model, dataset, epochs=10, lr=1e-3, percentile_schedule=[10, 20, 40, 50, 75]
+    model,
+    dataset,
+    epochs=10,
+    lr=1e-3,
+    percentile_schedule=[10, 20, 40, 50, 75, 100],
+    name="default",
 ):
     print("Start training")
+    best_loss = np.inf
     # Train test split using torch
     dataset_size = len(dataset)
     split_idx = int(0.8 * dataset_size)
@@ -47,8 +58,7 @@ def train_eval(
 
     for epoch in range(epochs):
         model.train()
-        total_loss = 0
-        total_acc = 0
+        train_loss = 0
         start_time = time.time()
         torch.cuda.reset_peak_memory_stats()
 
@@ -82,153 +92,207 @@ def train_eval(
             optimizer.step()
 
             # Train stats
-            acc = (pred.sigmoid() > 0.5).eq(y).float().mean()
-            total_loss += loss.item()
-            total_acc += acc.item()
+            train_loss += loss.item()
+        train_loss /= len(train_loader)
 
         end_time = time.time()
-        print(
-            f"Epoch {epoch + 1}: Loss = {total_loss:.4f}, Accuracy = {total_acc / len(train_loader):.4f}, GPU = {torch.cuda.max_memory_allocated() / 1e6:.2f}MB, Time = {end_time - start_time:.2f}s"
-        )
         gc.collect()
 
-        if epoch % 1 == 0:
+        model.eval()
 
-            model.eval()
+        y_true, y_pred = [], []
 
-            y_true, y_pred = [], []
-            ttc_scores = []
-            acc_time_curve_by_class = defaultdict(
-                list
-            )  # {class_idx: [(t/T, acc), ...]}
+        with torch.no_grad():
+            y_true_list, y_pred_list, y_logits_list = [], [], []
+            test_loss = 0
+            # For each data point
+            for x, x_static, y in tqdm(test_loader, "Testing"):
 
-            with torch.no_grad():
-                # For each data point
-                for x, x_static, y in tqdm(test_loader, "Testing"):
+                x, x_static, y = x.to(device), x_static.to(device), y.to(device)
 
-                    x, x_static, y = x.to(device), x_static.to(device), y.to(device)
+                # run inference
+                outputs = model(x, x_static)
 
-                    # run inference
-                    outputs = model(x, x_static)
+                final_output = outputs[-1]  # [batch_size, num_labels] - raw logits
 
-                    # Get timesteps
-                    T = len(outputs)
+                loss = criterion(final_output, y)
+                test_loss += loss.item()
 
-                    # Get sequnce of  predictions
-                    preds = [
-                        (torch.sigmoid(o) > 0.5) for o in outputs
-                    ]  # List[T] of [num_labels] boolean tensors
+                # Add true and predicted
+                y_true_list.append(y.cpu())
+                y_pred_list.append((final_output.sigmoid() > 0.5).cpu())
+                y_logits_list.append(final_output.cpu())
+            
+            test_loss /= len(test_loader)
+            latest_path = os.path.join(
+                output_dir, name, "checkpoints", "model_latest.pt"
+            )
+            torch.save(model.state_dict(), latest_path)
 
-                    # Get latest prediction
-                    final_pred = preds[-1]
+            if test_loss < best_loss:
+                best_loss = test_loss
+                best_path = os.path.join(
+                    output_dir, name, "checkpoints", "model_best.pt"
+                )
+                torch.save(model.state_dict(), best_path)
 
-                    # Add true and predicted
-                    y_true.append(y.cpu())
-                    y_pred.append(final_pred.cpu())
+            # Stack all predictions
+            y_true = torch.stack(y_true_list).to(torch.float32).numpy()
+            y_pred = torch.stack(y_pred_list).to(torch.float32).numpy()
+            y_logits = torch.stack(y_logits_list).to(torch.float32).numpy()
 
-                    # Time to correct (TTC)
-                    for t in range(T):
-                        # If the entire thing got it all right set the frame score
-                        if preds[t].eq(y.bool()).all():
-                            ttc_scores.append((None, t / T))
-                            break
-                    else:
-                        # Else it got none of it right
-                        ttc_scores.append((None, 1.0))
+            # Load the json with label information
+            with open("label_metadata.json") as f:
+                label_metadata = json.load(f)
 
-                    # TTC per class
-                    for class_idx in range(y.size(0)):
-                        for t in range(T):
-                            if preds[t][class_idx] == y[class_idx]:
-                                ttc_scores.append((class_idx, t / T))
-                                break
+            label_names = list(label_metadata.keys())
 
-                    for t in range(T):
-                        pred_t = preds[t]  # shape: [num_labels]
-                        correct_t = pred_t.eq(y.bool())  # shape: [num_labels]
+            # Create mappings from the metadata json file
+            onehot_class_map = defaultdict(list)
+            for label, info in label_metadata.items():
+                if info.get("type") == "onehot" and "onehot_class" in info:
+                    onehot_class_map[info["onehot_class"]].append(label)
 
-                        for class_idx, correct in enumerate(correct_t):
-                            acc_time_curve_by_class[class_idx].append(
-                                (t / T, float(correct))
-                            )
+            # Per label Metrics
+            per_label_metrics = []
+            label_names = list(label_metadata.keys())
 
-                # Metric computation
-                y_true = torch.stack(y_true).to(torch.float32).numpy()
-                y_pred = torch.stack(y_pred).to(torch.float32).numpy()
-
-                precision_micro = precision_score(y_true, y_pred, average="micro")
-                recall_micro = recall_score(y_true, y_pred, average="micro")
-                f1_micro = f1_score(y_true, y_pred, average="micro")
-
-                auatc_by_class = {}
-                for class_idx, curve in acc_time_curve_by_class.items():
-                    
-                    # Group by timestep
-                    acc_dict = defaultdict(list)
-                    for t, acc in curve:
-                        acc_dict[t].append(acc)
-
-                    # Average at each t, then compute AUC
-                    x_vals, y_vals = zip(
-                        *sorted((t, np.mean(accs)) for t, accs in acc_dict.items())
-                    )
-
-                    if len(set(x_vals)) > 1:  # Need at least two distinct x-values
-                        auatc_by_class[class_idx] = auc(x_vals, y_vals)
-                    else:
-                        auatc_by_class[class_idx] = 0.0
-
-                print("\n--- Overall Per-Label (Micro) ---")
-                print(
-                    f"Precision: {precision_micro:.4f}, Recall: {recall_micro:.4f}, F1: {f1_micro:.4f}"
+            for i, label in enumerate(label_names):
+                p = precision_score(y_true[:, i], y_pred[:, i], zero_division=0)
+                r = recall_score(y_true[:, i], y_pred[:, i], zero_division=0)
+                f = f1_score(y_true[:, i], y_pred[:, i], zero_division=0)
+                per_label_metrics.append(
+                    {"label": label, "precision": p, "recall": r, "f1": f}
                 )
 
-                # Load the json with label information
-                with open("label_metadata.json") as f:
-                    label_metadata = json.load(f)
+            # Softmax-Based Onehot Metrics
+            onehot_metrics = []
 
-                label_names = list(label_metadata.keys())
+            for group, label_list in onehot_class_map.items():
+                indices = [
+                    label_names.index(lbl) for lbl in label_list if lbl in label_names
+                ]
+                if not indices:
+                    continue
 
-                # Create mappings from the metadata json file
-                onehot_class_map = defaultdict(list)
-                for label, info in label_metadata.items():
-                    if info.get("type") == "onehot" and "onehot_class" in info:
-                        onehot_class_map[info["onehot_class"]].append(label)
+                logits_group = y_logits[:, indices]
+                true_group = y_true[:, indices]
 
-                # Calculation of onehot metrics
-                # 🧠 Get raw predictions before thresholding
-                y_pred_raw = torch.stack([
-                    torch.cat([out.cpu().unsqueeze(0) for out in model(x.to(device), x_static.to(device))], dim=0)[-1]
-                    for x, x_static, _ in test_loader
-                ]).to(torch.float32).numpy()
+                softmaxed = torch.softmax(torch.tensor(logits_group), dim=1).numpy()
+                pred_onehot = np.zeros_like(softmaxed)
+                pred_onehot[np.arange(len(softmaxed)), np.argmax(softmaxed, axis=1)] = 1
 
-                # 📦 Softmax-Based Onehot Metrics
-                onehot_metrics = {}
-                for group, label_list in onehot_class_map.items():
-                    indices = [label_names.index(lbl) for lbl in label_list if lbl in label_names]
-                    if not indices:
-                        continue
+                p = precision_score(
+                    true_group, pred_onehot, average="micro", zero_division=0
+                )
+                r = recall_score(
+                    true_group, pred_onehot, average="micro", zero_division=0
+                )
+                f = f1_score(true_group, pred_onehot, average="micro", zero_division=0)
 
-                    y_true_group = y_true[:, indices]
-                    y_pred_group_raw = y_pred_raw[:, indices]
+                onehot_metrics.append(
+                    {"group": group, "precision": p, "recall": r, "f1": f}
+                )
 
-                    # 🧠 Softmax across one-hot class group
-                    softmaxed = torch.softmax(torch.tensor(y_pred_group_raw), dim=1).numpy()
+        # print eveything
+        print(
+            f"Epoch {epoch + 1}: Train Loss = {train_loss:.4f}, Test Loss = {test_loss:.4f}, Train GPU = {torch.cuda.max_memory_allocated() / 1e6:.2f}MB, Train Time = {end_time - start_time:.2f}s"
+        )
 
-                    # 🎯 Convert to 1-hot prediction (argmax)
-                    y_pred_group = np.zeros_like(softmaxed)
-                    y_pred_group[np.arange(len(softmaxed)), np.argmax(softmaxed, axis=1)] = 1
+        # Save epoch-level metrics (append mode)
+        with open(
+            os.path.join(output_dir, name, "epoch_metrics.csv"), mode="a", newline=""
+        ) as file:
+            writer = csv.writer(file)
+            if epoch == 0:  # Write header only once
+                writer.writerow(
+                    [
+                        "epoch",
+                        "train_loss",
+                        "test_loss",
+                        "gpu_memory_mb",
+                        "epoch_time_sec",
+                    ]
+                )
+            writer.writerow(
+                [
+                    epoch + 1,
+                    train_loss,
+                    test_loss,
+                    round(torch.cuda.max_memory_allocated() / 1e6, 2),
+                    round(end_time - start_time, 2),
+                ]
+            )
 
-                    onehot_metrics[group] = {
-                        "precision": precision_score(y_true_group, y_pred_group, average="micro", zero_division=0),
-                        "recall": recall_score(y_true_group, y_pred_group, average="micro", zero_division=0),
-                        "f1": f1_score(y_true_group, y_pred_group, average="micro", zero_division=0),
-                    }
+        # Save per-label metrics
+        with open(
+            os.path.join(output_dir, name, "per_label_metrics.csv"), "a", newline=""
+        ) as f:
+            fieldnames = ["epoch", "label", "precision", "recall", "f1"]
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            if epoch == 0:
+                writer.writeheader()
+            for row in per_label_metrics:
+                row["epoch"] = epoch + 1
+                writer.writerow(row)
 
-                # Save CSVs
+        # Save per-onehot-class metrics
+        with open(
+            os.path.join(output_dir, name, "per_onehot_class_metrics.csv"),
+            "a",
+            newline="",
+        ) as f:
+            fieldnames = ["epoch", "group", "precision", "recall", "f1"]
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            if epoch == 0:
+                writer.writeheader()
+            for row in onehot_metrics:
+                row["epoch"] = epoch + 1
+                writer.writerow(row)
 
-if __name__ == "__main__":
+
+def main(args):
+    # make the directories
+    os.makedirs(os.path.join(output_dir, args.name, "logs"), exist_ok=True)
+    os.makedirs(os.path.join(output_dir, args.name, "checkpoints"), exist_ok=True)
+
+    # Load dataset
     model = CNNLSTMClassifier().to(torch.bfloat16)
     dataset = TwoDimensionalTensorDataset()
-    dataset = TestTwoDimensionalTensorDataset(dataset) # This is for debugging
-    train_eval(model=model, dataset=dataset)
+    # dataset = TestTwoDimensionalTensorDataset(dataset)  # This is for debugging
+
+    train_eval(
+        model=model,
+        dataset=dataset,
+        epochs=args.epochs,
+        lr=args.lr,
+        percentile_schedule=args.percentiles,
+        name=args.name,
+    )
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Train CNN-LSTM model")
+
+    parser.add_argument(
+        "--epochs", type=int, default=10, help="Number of training epochs"
+    )
+    parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
+    parser.add_argument(
+        "--percentiles",
+        type=int,
+        nargs="+",
+        default=[10, 20, 40, 50, 75],
+        help="List of percentile values for curriculum schedule",
+    )
+    parser.add_argument("--name", type=str, default="unnamed")
+
+    args = parser.parse_args()
+    main(args)
+
+    # model = CNNLSTMClassifier().to(torch.bfloat16)
+    # dataset = TwoDimensionalTensorDataset()
+
+    # train_eval(model=model, dataset=dataset)
