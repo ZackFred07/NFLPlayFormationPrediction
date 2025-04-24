@@ -27,6 +27,6 @@ run `preprocessing.py` to create the dataset (NOTE: Will use 60GB of RAM)
 
 `label_metadata.json` is metadata created for the labels and onehot relationship
 
-`nohup2.out` show the training cmd on separate GPUs; they are running the second script in `run.sh`
+`nohup1.out` and `nohup2.out` show the training cmd on separate GPUs; they are running the first and second script in `run.sh`, respectively
 
 # Previous code outputs
