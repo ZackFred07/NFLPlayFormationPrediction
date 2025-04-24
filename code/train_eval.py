@@ -158,6 +158,7 @@ def train_eval(
             label_names = list(label_metadata.keys())
 
             for i, label in enumerate(label_names):
+                a = accuracy_score(y_true[:, i], y_pred[:, i])
                 p = precision_score(y_true[:, i], y_pred[:, i], zero_division=0)
                 r = recall_score(y_true[:, i], y_pred[:, i], zero_division=0)
                 f = f1_score(y_true[:, i], y_pred[:, i], zero_division=0)
@@ -165,41 +166,42 @@ def train_eval(
                     {"label": label, "accuracy":a, "precision": p, "recall": r, "f1": f}
                 )
 
-            # Softmax-Based Onehot Metrics
+            # Argmax Onehot Metrics
             onehot_metrics = []
 
             for group, label_list in onehot_class_map.items():
-                indices = [
-                    label_names.index(lbl) for lbl in label_list if lbl in label_names
-                ]
+                indices = [label_names.index(lbl) for lbl in label_list if lbl in label_names]
                 if not indices:
                     continue
 
+                # Get logits and true labels for this group
                 logits_group = y_logits[:, indices]
                 true_group = y_true[:, indices]
 
+                # Compute predicted and true class indices
                 softmaxed = torch.softmax(torch.tensor(logits_group), dim=1).numpy()
-                pred_onehot = np.zeros_like(softmaxed)
-                pred_onehot[np.arange(len(softmaxed)), np.argmax(softmaxed, axis=1)] = 1
-                a = accuracy_score(
-                    true_group, pred_onehot
-                )
-                p = precision_score(
-                    true_group, pred_onehot, average="macro", zero_division=0
-                )
-                r = recall_score(
-                    true_group, pred_onehot, average="macro", zero_division=0
-                )
-                f = f1_score(true_group, pred_onehot, average="macro", zero_division=0)
+                pred_classes = np.argmax(softmaxed, axis=1)
+                true_classes = np.argmax(true_group, axis=1)
 
-                onehot_metrics.append(
-                    {"group": group, "accuracy":a, "precision": p, "recall": r, "f1": f}
-                )
+                # Compute classification metrics
+                a = accuracy_score(true_classes, pred_classes)
+                p = precision_score(true_classes, pred_classes, average="macro", zero_division=0)
+                r = recall_score(true_classes, pred_classes, average="macro", zero_division=0)
+                f = f1_score(true_classes, pred_classes, average="macro", zero_division=0)
 
-        # print eveything
-        print(
-            f"Epoch {epoch + 1}: Train Loss = {train_loss:.4f}, Test Loss = {test_loss:.4f}, Train GPU = {torch.cuda.max_memory_allocated() / 1e6:.2f}MB, Train Time = {end_time - start_time:.2f}s"
-        )
+                onehot_metrics.append({
+                    "group": group,
+                    "accuracy": a,
+                    "precision": p,
+                    "recall": r,
+                    "f1": f
+                })
+
+                # print loss
+            print(
+                f"Epoch {epoch + 1}: Train Loss = {train_loss:.4f}, Test Loss = {test_loss:.4f}, Train GPU = {torch.cuda.max_memory_allocated() / 1e6:.2f}MB, Train Time = {end_time - start_time:.2f}s"
+            )
+            print(str(onehot_metrics))
 
         # Save epoch-level metrics (append mode)
         with open(
@@ -230,7 +232,7 @@ def train_eval(
         with open(
             os.path.join(output_dir, name, "per_label_metrics.csv"), "a", newline=""
         ) as f:
-            fieldnames = ["epoch", "label", "precision", "recall", "f1"]
+            fieldnames = ["epoch", "label", "accuracy", "precision", "recall", "f1"]
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             if epoch == 0:
                 writer.writeheader()

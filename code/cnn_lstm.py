@@ -14,7 +14,7 @@ class CNNLSTMClassifier(nn.Module):
 
         self.lstm = nn.LSTM(input_size=32, hidden_size=lstm_hidden, batch_first=False)
 
-        self.static_fc = nn.Linear(73, 32)  # adjust to your actual static feature size
+        self.static_fc = nn.Linear(73, 32)
 
         self.head = nn.Sequential(
             nn.Linear(lstm_hidden + 32, 128),
@@ -22,11 +22,8 @@ class CNNLSTMClassifier(nn.Module):
             nn.Linear(128, num_outputs),
         )
 
+    # Forward function (only takes non-batched inputs)
     def forward(self, x_dynamic, x_static):
-        """
-        x_dynamic: [1, T, C, H, W] or [T, C, H, W] if batch is squeezed
-        x_static: [1, F] or [F]
-        """
         dtype = next(self.parameters()).dtype
         if x_dynamic.ndim == 5:
             x_dynamic = x_dynamic.squeeze(0)  # [T, C, H, W]
@@ -42,8 +39,8 @@ class CNNLSTMClassifier(nn.Module):
 
         cnn_feats = torch.stack(cnn_feats)  # [T, 32]
 
-        lstm_out, _ = self.lstm(cnn_feats.unsqueeze(1))  # [T, 1, H]
-        lstm_out = lstm_out.squeeze(1)  # [T, H]
+        lstm_out, _ = self.lstm(cnn_feats.unsqueeze(1))  # [T, 1, hidden_states]
+        lstm_out = lstm_out.squeeze(1)  # [T, hidden_states]
 
         x_static_proj = self.static_fc(x_static)  # [32]
 
