@@ -6,6 +6,7 @@ matplotlib
 tqdm
 seaborn
 opencv-python
+tqdm
 
 # Torch already included in the image with CUDA support:
 # torch==2.6.0+cu124
